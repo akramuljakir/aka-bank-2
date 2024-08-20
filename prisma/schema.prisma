@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  email    String    @unique
+  password String
+  role     Role
+  employee Employee?
+  customer Customer?
+}
+
+model Employee {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @unique // Ensure the userId is unique for the one-to-one relation
+}
+
+model Customer {
+  id        Int           @id @default(autoincrement())
+  user      User          @relation(fields: [userId], references: [id])
+  userId    Int           @unique // Ensure the userId is unique for the one-to-one relation
+  accounts  BankAccount[]
+  createdAt DateTime      @default(now())
+}
+
+model BankAccount {
+  id            Int           @id @default(autoincrement())
+  accountNumber String        @unique
+  balance       Float         @default(0)
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  customerId    Int
+  transactions  Transaction[]
+}
+
+model Transaction {
+  id        Int             @id @default(autoincrement())
+  amount    Float
+  type      TransactionType
+  account   BankAccount     @relation(fields: [accountId], references: [id])
+  accountId Int
+  createdAt DateTime        @default(now())
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+  CUSTOMER
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+}
