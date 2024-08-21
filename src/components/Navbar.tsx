@@ -1,67 +1,56 @@
-'use client';
+"use client"
+import { useState } from 'react';
 
-import { useSession, signOut } from 'next-auth/react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+export default function Home() {
+    const [menuOpen, setMenuOpen] = useState(false);
 
-const Navbar = () => {
-    const { data: session, status } = useSession();
-    const router = useRouter();
+    const toggleMenu = () => {
+        setMenuOpen(!menuOpen);
+    };
 
-    if (status === 'loading') {
-        return <div>Loading...</div>; // Show a loading state while the session is being fetched
-    }
-
-    // If no session exists, show login
-    if (!session) {
-        return (
-            <nav className="bg-blue-600 text-white p-4">
-                <div className="container mx-auto flex justify-between items-center">
-                    <Link href="/" className="text-lg font-bold">
-                        Bank App
-                    </Link>
-                    <Link href="/login" className="bg-white text-blue-600 px-4 py-2 rounded">
-                        Login
-                    </Link>
-                </div>
-            </nav>
-        );
-    }
-
-    // Display dashboard links based on the user role
     return (
-        <nav className="bg-blue-600 text-white p-4">
-            <div className="container mx-auto flex justify-between items-center">
-                <Link href="/" className="text-lg font-bold">
-                    Bank App
-                </Link>
-                <div>
-                    <span className="mr-4">Welcome, {session.user?.email}</span>
-                    {session.user?.role === 'ADMIN' && (
-                        <Link href="/admin/dashboard" className="mr-4">
-                            Admin Dashboard
-                        </Link>
-                    )}
-                    {session.user?.role === 'EMPLOYEE' && (
-                        <Link href="/employee/dashboard" className="mr-4">
-                            Employee Dashboard
-                        </Link>
-                    )}
-                    {session.user?.role === 'CUSTOMER' && (
-                        <Link href="/customer/dashboard" className="mr-4">
-                            Customer Dashboard
-                        </Link>
-                    )}
-                    <button
-                        onClick={() => signOut()}
-                        className="bg-red-500 px-4 py-2 rounded"
-                    >
-                        Logout
-                    </button>
-                </div>
-            </div>
-        </nav>
-    );
-};
+        <>
+            {/* Navbar */}
+            < nav className="bg-white shadow-lg fixed w-full top-0 left-0 z-10" >
+                <div className="container mx-auto px-4 py-6 flex justify-between items-center">
+                    {/* Brand Name */}
+                    <a href="/" className="text-2xl font-bold text-blue-600">AkaBank</a>
 
-export default Navbar;
+                    {/* Desktop Menu */}
+                    <div className="hidden md:flex space-x-6">
+                        <a href="/" className="text-gray-700 hover:text-blue-600">Home</a>
+                        <a href="/about" className="text-gray-700 hover:text-blue-600">About Us</a>
+                        <a href="/services" className="text-gray-700 hover:text-blue-600">Services</a>
+                        <a href="/contact" className="text-gray-700 hover:text-blue-600">Contact</a>
+                        <a href="/login" className="text-gray-700 hover:text-blue-600">Login</a>
+                        <a href="/register" className="text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-500">Sign Up</a>
+                    </div>
+
+                    {/* Mobile Menu Button */}
+                    <div className="md:hidden">
+                        <button onClick={toggleMenu} className="mobile-menu-button">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Mobile Menu */}
+                {
+                    menuOpen && (
+                        <div className="mobile-menu md:hidden">
+                            <a href="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">Home</a>
+                            <a href="/about" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">About Us</a>
+                            <a href="/services" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">Services</a>
+                            <a href="/contact" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">Contact</a>
+                            <a href="/login" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">Login</a>
+                            <a href="/register" className="block px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-500">Sign Up</a>
+                        </div>
+                    )
+                }
+
+            </nav >
+        </>
+    )
+}

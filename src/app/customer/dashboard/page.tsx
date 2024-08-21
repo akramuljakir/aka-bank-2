@@ -1,133 +1,63 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-const CustomerDashboard = () => {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const [accounts, setAccounts] = useState([]);
-    const [accountNumber, setAccountNumber] = useState('');
-    const [amount, setAmount] = useState('');
-    const [recipientAccount, setRecipientAccount] = useState('');
-    const [transactions, setTransactions] = useState([]);
+export default function CustomerDashboard() {
+    const [accountDetails, setAccountDetails] = useState({ accountNumber: '', balance: 0 });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
+    // Fetch account details from the API
     useEffect(() => {
-        if (status === 'loading') return; // Wait for session to load
+        async function fetchAccountDetails() {
+            try {
+                const response = await fetch('/api/customer/viewBalance');
+                const data = await response.json();
 
-        if (!session || session.user?.role !== 'CUSTOMER') {
-            router.push('/unauthorized');
+                console.log('API Response:', data); // Log API response for debugging
+
+                if (response.ok) {
+                    setAccountDetails({ accountNumber: data.accountNumber, balance: data.balance });
+                } else {
+                    setError('Failed to fetch account details.');
+                    console.log('Error response:', data);
+                }
+            } catch (error) {
+                setError('Error fetching account details.');
+                console.error('Fetch Error:', error); // Log fetch error
+            } finally {
+                setLoading(false);
+            }
         }
-    }, [session, status, router]);
 
-    // Fetch customer accounts
-    useEffect(() => {
-        const fetchAccounts = async () => {
-            const res = await fetch('/api/customer/viewBalance');
-            const data = await res.json();
-            setAccounts(data.accounts || []);
-        };
+        fetchAccountDetails();
+    }, []);
 
-        if (session?.user?.role === 'CUSTOMER') {
-            fetchAccounts();
-        }
-    }, [session]);
+    if (loading) {
+        return <div>Loading...</div>;
+    }
 
-    // Fetch customer transactions (statements)
-    const handleViewStatements = async (accountNumber) => {
-        const res = await fetch(`/api/customer/viewStatement?accountNumber=${accountNumber}`);
-        const data = await res.json();
-        setTransactions(data.transactions || []);
-    };
-
-    // Transfer money between accounts
-    const handleTransfer = async (e) => {
-        e.preventDefault();
-        const res = await fetch('/api/customer/transferMoney', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                fromAccount: accountNumber,
-                toAccount: recipientAccount,
-                amount: parseFloat(amount),
-            }),
-        });
-
-        if (res.ok) {
-            alert('Transfer successful');
-            setAccountNumber('');
-            setRecipientAccount('');
-            setAmount('');
-        } else {
-            alert('Transfer failed');
-        }
-    };
+    if (error) {
+        return <div>{error}</div>;
+    }
 
     return (
-        <div className="p-6">
+        <main className="container mx-auto p-6">
             <h1 className="text-2xl font-bold mb-4">Customer Dashboard</h1>
-            <h2 className="text-lg font-bold mb-4">Your Accounts:</h2>
 
+            <h2 className="text-lg font-bold mb-4">Your Accounts:</h2>
             <ul>
-                {accounts.map((account) => (
-                    <li key={account.accountNumber} className="mb-4 p-4 border rounded">
-                        <p>Account Number: {account.accountNumber}</p>
-                        <p>Balance: ${account.balance.toFixed(2)}</p>
-                        <button
-                            onClick={() => handleViewStatements(account.accountNumber)}
-                            className="bg-blue-500 text-white py-2 px-4 rounded mt-4"
-                        >
-                            View Statements
-                        </button>
-                    </li>
-                ))}
+                <li>Account Number: {accountDetails.accountNumber}</li>
+                <li>Balance: ${accountDetails.balance.toFixed(2)}</li>
             </ul>
 
-            {transactions.length > 0 && (
-                <div className="mt-6">
-                    <h2 className="text-lg font-bold mb-4">Account Statements:</h2>
-                    <ul>
-                        {transactions.map((transaction) => (
-                            <li key={transaction.id} className="mb-2">
-                                {transaction.type}: ${transaction.amount.toFixed(2)} on {new Date(transaction.createdAt).toLocaleString()}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            <form onSubmit={handleTransfer} className="bg-white p-6 rounded shadow-md mt-6">
+            <form className="bg-white p-6 rounded shadow-md mt-6">
                 <h2 className="text-xl font-bold mb-4">Transfer Money</h2>
-                <input
-                    type="text"
-                    placeholder="Your Account Number"
-                    className="mb-4 p-2 border w-full"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                />
-                <input
-                    type="text"
-                    placeholder="Recipient Account Number"
-                    className="mb-4 p-2 border w-full"
-                    value={recipientAccount}
-                    onChange={(e) => setRecipientAccount(e.target.value)}
-                />
-                <input
-                    type="number"
-                    placeholder="Amount"
-                    className="mb-4 p-2 border w-full"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                />
-                <button type="submit" className="bg-green-500 text-white py-2 px-4 rounded">
-                    Transfer
-                </button>
+                <input type="text" placeholder="Your Account Number" value={accountDetails.accountNumber} readOnly className="mb-4 p-2 border w-full" />
+                <input type="text" placeholder="Recipient Account Number" className="mb-4 p-2 border w-full" />
+                <input type="number" placeholder="Amount" className="mb-4 p-2 border w-full" />
+                <button type="submit" className="bg-green-500 text-white py-2 px-4 rounded">Transfer</button>
             </form>
-        </div>
+        </main>
     );
-};
-
-export default CustomerDashboard;
+}
